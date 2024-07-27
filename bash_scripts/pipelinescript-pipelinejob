@@ -1,0 +1,59 @@
+@Library('drilldevops-sharedlibrary@test') _
+pipeline{
+    agent any
+    tools {
+        maven "MAVEN_HOME"
+    }
+    environment {
+        // Define these here if you want to use them later in the pipeline
+        REPOSITORY = 'https://github.com/kalyanreddyc/onlinebookstoreapp.git'
+        CREDENTIALS_ID = '636c6341-3a7a-491c-a744-67bf8769c54d'
+    }
+    stages{
+        stage('Checkout') {
+            steps {
+                script {
+                    // Ensure BRANCH_NAME is correctly set
+                    if (!env.BRANCH_NAME) {
+                        env.BRANCH_NAME = 'master' // Fallback to default branch if not specified
+                        }
+                        echo "Attempting to checkout branch: ${env.BRANCH_NAME}"
+                       
+                        // Call the shared library script to determine the build type and get the branch name
+                        def checkedOutBranch = checkBranch_demo() // This now holds the actual branch name
+                        
+                        echo "Resolved branch for checkout: ${checkedOutBranch}"
+                        // Now use the checkoutFromGitHub with the determined branch
+                        gitCheckoutrepo(
+                            repository: REPOSITORY,
+                            credentialsId: CREDENTIALS_ID,
+                            branch: checkedOutBranch // Use the returned branch name here
+            )
+        }
+    }
+}
+        stage('Build and publish') {
+            steps {
+                script {
+                    buildandPublish()
+                }
+            }
+        }
+        stage('Sonar/Quality Checks') {
+            steps {
+                script {
+                    // Perform SonarQube scanning
+                    sonarQualityChecks()
+                    // This step requires the SonarQube Jenkins Plugin
+                    // It waits for the SonarQube analysis to be completed and fetches the Quality Gate status
+                    timeout(time: 5, unit: 'MINUTES') { // Adjust timeout according to your project's needs
+                        def qg = waitForQualityGate() // Waits for a SonarQube analysis to complete
+                        if (qg.status != 'OK') {
+                            error "Quality Gate failed: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
