@@ -61,9 +61,9 @@ sudo systemctl start docker || error_exit "Failed to start Docker service."
 echo "Enabling Docker to start on boot..."
 sudo systemctl enable docker || error_exit "Failed to enable Docker on boot."
 
-# Check Docker status
+# Check Docker status without interactive mode
 echo "Checking Docker status..."
-sudo systemctl status docker || error_exit "Failed to check Docker status."
+sudo systemctl is-active --quiet docker || error_exit "Docker is not running."
 
 # Adding current user to docker group
 echo "Adding current user to docker group..."
