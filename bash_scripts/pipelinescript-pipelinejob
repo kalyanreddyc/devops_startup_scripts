@@ -12,12 +12,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    if (!env.BRANCH_NAME) {
-                        env.BRANCH_NAME = 'master' // Fallback to default branch if not specified
-                    }
-                    echo "Attempting to checkout branch: ${env.BRANCH_NAME}"
                     def checkedOutBranch = checkBranch_demo()
-                    echo "Resolved branch for checkout: ${checkedOutBranch}"
                     gitCheckoutrepo(
                         repository: REPOSITORY,
                         credentialsId: CREDENTIALS_ID,
@@ -26,10 +21,19 @@ pipeline {
                 }
             }
         }
+        stage('Prepare Release') {
+            when {
+                expression { env.BUILD_TYPE == 'RELEASE' }
+            }
+            steps {
+                script {
+                    prepareRelease()
+                }
+            }
+        }
         stage('Build and Verify') {
             steps {
                 script {
-                    // Call build and verify only
                     buildandPublish('verify')
                 }
             }
@@ -43,14 +47,13 @@ pipeline {
         }
         stage('Publish to Nexus') {
             when {
-                expression {
-                    // Ensure this stage runs only if SonarQube checks are successful
-                    currentBuild.result == null || currentBuild.result == 'SUCCESS'
+                allOf {
+                    expression { env.BUILD_TYPE in ['SNAPSHOT', 'RELEASE'] }
+                    expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
                 }
             }
             steps {
                 script {
-                    // Now deploy to Nexus after successful Sonar checks
                     buildandPublish('deploy')
                 }
             }
