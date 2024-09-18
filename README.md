@@ -2,14 +2,14 @@
 DrillDevops_Startup_Scripts_Automations
 
 ##Jenkins agent.jar on linux 
-#!/bin/bash
 
-# Define variables
+#!/bin/bash
+####Define variables
 JENKINS_URL="http://<your-jenkins-server>"
 JENKINS_AGENT_NAME="<your-agent-name>"
 JENKINS_SECRET="<your-agent-secret>"
 
-# Run the agent
+###Run the agent
 java -jar agent.jar -jnlpUrl ${JENKINS_URL}/computer/${JENKINS_AGENT_NAME}/jenkins-agent.jnlp -secret ${JENKINS_SECRET} -workDir "/home/jenkins" >> jenkins-agent.log 2>&1 &
 
 
@@ -27,7 +27,7 @@ Restart=always
 WantedBy=multi-user.target
 
 
-##Reload Systemd and Start the Service:
+###Reload Systemd and Start the Service:
 sudo systemctl daemon-reload
 sudo systemctl start jenkins-agent
 sudo systemctl enable jenkins-agent
